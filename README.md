@@ -54,5 +54,5 @@ O sistema substitui o controle manual por planilhas automatizadas, gerencia o ef
 
 1. **Clone o repositório:**
 ```bash
-   git clone https://github.com/SEU_USUARIO/SGI-Controle-Efetivo.git
-   cd SGI-Controle-Efetivo
+   git clone https://github.com/CaioD13/Sistema-P1-P4.git
+   cd Sistema-P1-P4
