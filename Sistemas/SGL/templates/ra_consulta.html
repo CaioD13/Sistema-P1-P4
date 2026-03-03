@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card shadow">
+  <div class="card-header bg-dark text-white fw-bold">RA - Consulta (Retiradas/Devoluções)</div>
+  <div class="card-body">
+    <form method="GET" class="d-flex gap-2 mb-3">
+      <input name="q" class="form-control" placeholder="Patrimônio, Série, Nome, RE, Nome de Guerra..." value="{{ termo }}">
+      <button class="btn btn-primary">Buscar</button>
+      <a class="btn btn-outline-secondary" href="{{ url_for('ra_retirada') }}">Nova Retirada</a>
+      <a class="btn btn-outline-success" href="{{ url_for('ra_devolucao') }}">Nova Devolução</a>
+    </form>
+
+    <div class="table-responsive">
+      <table class="table table-striped align-middle">
+        <thead class="table-dark">
+          <tr>
+            <th>Material</th>
+            <th>Retirada</th>
+            <th>Quem retirou</th>
+            <th>Operador (retirada)</th>
+            <th>Devolução</th>
+            <th>Quem devolveu</th>
+            <th>Operador (devolução)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in registros %}
+          <tr>
+            <td>
+              <div class="fw-bold">{{ r.material.nome_material }}</div>
+              <small class="text-muted">Pat: {{ r.material.patrimonio }} | Série: {{ r.material.n_serie }}</small>
+            </td>
+
+            <td>{{ r.data_hora_retirada.strftime('%d/%m/%Y %H:%M') }}</td>
+            <td>
+              {{ r.pm_retirou_posto_grad }} {{ r.pm_retirou_nome_guerra }}<br>
+              <small class="text-muted">RE {{ r.pm_retirou_re }} | {{ r.pm_retirou_cia_secao }}</small>
+              {% if r.observacoes_retirada %}
+                <div class="small text-muted">Obs: {{ r.observacoes_retirada }}</div>
+              {% endif %}
+            </td>
+            <td>{{ r.operador_retirada }}</td>
+
+            <td>
+              {% if r.data_hora_devolucao %}
+                {{ r.data_hora_devolucao.strftime('%d/%m/%Y %H:%M') }}
+              {% else %}
+                <span class="badge bg-warning text-dark">EM ABERTO</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if r.pm_devolveu_re %}
+                {{ r.pm_devolveu_posto_grad }} {{ r.pm_devolveu_nome_guerra }}<br>
+                <small class="text-muted">RE {{ r.pm_devolveu_re }} | {{ r.pm_devolveu_cia_secao }}</small>
+                {% if r.observacoes_devolucao %}
+                  <div class="small text-muted">Obs: {{ r.observacoes_devolucao }}</div>
+                {% endif %}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if r.operador_devolucao %}
+                {{ r.operador_devolucao }}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+          {% if not registros %}
+          <tr><td colspan="7" class="text-center text-muted p-4">Sem registros.</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

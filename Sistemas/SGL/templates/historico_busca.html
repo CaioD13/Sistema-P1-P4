@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow border-info mb-4">
+            <div class="card-body text-center bg-light">
+                <h3 class="card-title text-info mb-3">🕵️ Consultar Histórico de Material</h3>
+                <p class="text-muted">Rastreie todas as movimentações, trocas de sala e alterações de status.</p>
+                
+                <form action="{{ url_for('historico_busca') }}" method="GET" class="d-flex gap-2 justify-content-center mt-4">
+                    <input class="form-control form-control-lg w-75" type="search" name="q" 
+                           placeholder="Digite Patrimônio, Série, RE ou Descrição..." 
+                           value="{{ termo if termo }}">
+                    <button class="btn btn-info text-white btn-lg px-4" type="submit">Rastrear</button>
+                </form>
+            </div>
+        </div>
+
+        {% if resultados %}
+            <h5 class="mb-3">Selecione um item para ver a linha do tempo:</h5>
+            <div class="list-group shadow">
+                {% for item in resultados %}
+                <a href="{{ url_for('historico_detalhes', id=item.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3">
+                    <div>
+                        <h5 class="mb-1 text-primary fw-bold">{{ item.nome_material }}</h5>
+                        <small class="text-muted">Patrimônio: <strong>{{ item.patrimonio }}</strong> | Série: {{ item.n_serie }}</small><br>
+                        <small>📍 Local Atual: {{ item.local }}</small>
+                    </div>
+                    <span class="badge bg-info rounded-pill">Ver Histórico ➡️</span>
+                </a>
+                {% endfor %}
+            </div>
+        {% elif termo %}
+            <div class="alert alert-warning text-center">Nenhum registro encontrado para "{{ termo }}".</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

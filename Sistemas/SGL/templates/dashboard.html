@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-0 text-primary">📋 Inventário Geral</h2>
+    </div>
+    <div class="d-flex gap-2">
+        <!-- BOTÃO DE PÂNICO PARA LIMPAR DUPLICATAS -->
+        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalReset">
+            🗑️ Limpar Banco
+        </button>
+        
+        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalImportar">
+            📤 Importar LCM
+        </button>
+        <a href="{{ url_for('exportar_excel') }}" class="btn btn-success">
+            📥 Baixar Excel
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- CARD QUANTIDADE (CORRIGIDO) -->
+    <div class="col-md-6">
+        <div class="card bg-primary text-white shadow-sm">
+            <div class="card-body">
+                <h5>Total de Itens</h5>
+                <!-- AQUI ESTAVA O ERRO: Agora usamos a variável qtd_total pura -->
+                <h2 class="fw-bold">{{ qtd_total }} un.</h2>
+            </div>
+        </div>
+    </div>
+    
+    <!-- CARD VALOR (CORRIGIDO) -->
+    <div class="col-md-6">
+        <div class="card bg-dark text-white shadow-sm">
+            <div class="card-body">
+                <h5>Valor Patrimonial Total</h5>
+                <!-- AQUI APLICAMOS O FILTRO DE REAIS -->
+                <h2 class="fw-bold">R$ {{ total_valor | reais }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ... (TABELA MANTIDA IGUAL) ... -->
+<div class="card shadow">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-striped mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Patrimônio</th>
+                        <th>Descrição</th>
+                        <th>Local</th>
+                        <th>Valor (R$)</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in materiais %}
+                    <tr>
+                        <td class="fw-bold">{{ item.patrimonio }}</td>
+                        <td>{{ item.nome_material }}</td>
+                        <td>{{ item.local }}</td>
+                        <!-- VALOR NA TABELA -->
+                        <td class="fw-bold">{{ item.valor | reais }}</td>
+                        <td>
+                            <a href="{{ url_for('editar', id=item.id) }}" class="btn btn-sm btn-outline-primary">✏️</a>
+                            <!-- ... outros botões ... -->
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL RESETAR BANCO -->
+<div class="modal fade" id="modalReset" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">⚠️ PERIGO: Limpar Tudo?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Isso vai <strong>APAGAR TODOS OS ITENS</strong> do banco de dados.</p>
+                <p>Use isso apenas se você importou duplicado e quer começar do zero.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form action="{{ url_for('resetar_banco') }}" method="POST">
+                    <button type="submit" class="btn btn-danger fw-bold">SIM, LIMPAR TUDO</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL IMPORTAR (Mantido) -->
+<div class="modal fade" id="modalImportar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('importar_lcm') }}" method="POST" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <label>Arquivo Excel</label>
+                    <input type="file" name="arquivo_excel" class="form-control" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Importar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

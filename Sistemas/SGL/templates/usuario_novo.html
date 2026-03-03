@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card shadow">
+  <div class="card-header bg-primary text-white fw-bold">Novo Usuário</div>
+  <div class="card-body">
+    <form method="POST">
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label>RE (Sem Dígito)</label>
+          <input name="re" class="form-control" placeholder="Ex: 123456-7" required>
+          <small class="text-muted">O sistema salvará o login como RE sem dígito.</small>
+        </div>
+        <div class="col-md-4">
+          <label>Perfil</label>
+          <select name="role" class="form-select">
+            <option value="usuario">Usuário</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label>Senha</label>
+          <input type="password" name="senha" class="form-control" required>
+          <small class="text-muted">Mín. 8, 1 maiúscula, 1 número, 1 especial.</small>
+        </div>
+        <div class="col-md-4">
+          <label>Confirmar Senha</label>
+          <input type="password" name="senha2" class="form-control" required>
+        </div>
+      </div>
+
+      <button class="btn btn-success">Salvar Usuário</button>
+      <a class="btn btn-secondary" href="{{ url_for('dashboard') }}">Voltar</a>
+    </form>
+  </div>
+</div>
+{% endblock %}
