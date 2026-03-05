@@ -1074,9 +1074,9 @@ def exportar_excel():
         filtro_posto = request.args.get('filtro_posto', 'Todos')
         mes = request.args.get('mes', datetime.now().month, type=int)
         ano = request.args.get('ano', datetime.now().year, type=int)
-        tipo = request.args.get('tipo_filtro', 'TODOS')
         cia = request.args.get('cia_filtro', 'TODAS')
         
+        import calendar
         u_dia = calendar.monthrange(ano, mes)[1]
         
         # 2. Configuração inicial do Excel
@@ -1096,8 +1096,6 @@ def exportar_excel():
         fmt_texto_centro = workbook.add_format({'font_name': 'Arial', 'font_size': 8, 'align': 'center', 'valign': 'vcenter', 'border': 1})
         fmt_texto_esq = workbook.add_format({'font_name': 'Arial', 'font_size': 8, 'align': 'left', 'valign': 'vcenter', 'border': 1, 'indent': 1})
         fmt_total = workbook.add_format({'bold': True, 'font_name': 'Arial', 'font_size': 8, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'bg_color': '#F2F2F2'})
-        
-        # Estilo BÔNUS (AK)
         fmt_bonus = workbook.add_format({'bold': True, 'font_name': 'Arial', 'font_size': 8, 'align': 'center', 'valign': 'vcenter', 'border': 1, 'bg_color': '#E6E6FF'})
 
         # --- LARGURAS ---
@@ -1106,7 +1104,7 @@ def exportar_excel():
         ws.set_column('C:C', 35)  # NOME
         ws.set_column(3, 33, 2.8) # Dias 1-31
         ws.set_column(34, 35, 6)  # DIAS e VALOR
-        ws.set_column(36, 36, 7)  # BÔNUS (Mais larguinho)
+        ws.set_column(36, 36, 7)  # BÔNUS
 
         # --- CABEÇALHO ---
         titulo_texto = f'CONTROLE DE FREQUÊNCIA - {cia if cia != "TODAS" else "37º BPM/M"}'
@@ -1127,35 +1125,34 @@ def exportar_excel():
             
         ws.write(2, col_idx, "DIAS", fmt_header)
         ws.write(2, col_idx+1, "VALOR", fmt_header)
-        ws.write(2, col_idx+2, "BÔNUS", fmt_header) # Coluna AK
+        ws.write(2, col_idx+2, "BÔNUS", fmt_header)
 
-        # --- FILTRO DE DADOS (CORRIGIDO E UNIFICADO) ---
-        lista_oficiais = ['Coronel PM', 'Tenente Coronel PM', 'Major PM', 'Capitão PM', '1º Tenente PM', '2º Tenente PM', 'Aspirante a Oficial']
-        lista_pracas = ['Subtenente PM', '1º Sargento PM', '2º Sargento PM', '3º Sargento PM', 'Cabo PM', 'Soldado PM']
+        # --- FILTRO DE DADOS (CORRIGIDO) ---
+        lista_oficiais = [
+            'Coronel PM', 'Cel PM', 
+            'Tenente Coronel PM', 'Ten Cel PM', 
+            'Major PM', 'Maj PM', 
+            'Capitão PM', 'Cap PM', 
+            '1º Tenente PM', '1º Ten PM', 
+            '2º Tenente PM', '2º Ten PM', 
+            'Aspirante a Oficial', 'Asp Of PM'
+        ]
         
-        q = Policial.query.filter_by(ativo=True)
+        # Pega todos os ativos e já ordena por nome para ficar bonitinho
+        q = Policial.query.filter_by(ativo=True).order_by(Policial.nome)
         
-        # Filtro de Cia
+        # Filtra Cia
         if cia != 'TODAS': 
             q = q.filter_by(cia=cia)
             
-        # Filtro de Oficial/Praça que vem do Modal Novo
+        # Filtra Oficiais ou Praças
         if filtro_posto == 'Oficiais':
             q = q.filter(Policial.posto.in_(lista_oficiais))
         elif filtro_posto == 'Pracas':
-            q = q.filter(Policial.posto.in_(lista_pracas))
+            q = q.filter(Policial.posto.notin_(lista_oficiais))
             
-        pms_raw = q.all()
-        
-        # Processa as outras ordenações (mantendo as funções que você já criou)
-        pms = filtrar_por_tipo_hierarquico(pms_raw, tipo)
-        
-        if cia == 'EM': 
-            pms = ordenar_em_agrupado(pms)
-        elif cia != 'TODAS': 
-            pms = ordenar_cia_agrupado(pms)
-        else: 
-            pms = ordenar_por_antiguidade(pms)
+        # AQUI ESTAVA O SEU ERRO (O nome da variável pms estava faltando!)
+        pms = q.all()
 
         # --- ESCRITA DOS DADOS ---
         linha = 3
@@ -1180,7 +1177,8 @@ def exportar_excel():
                         dias_trabalhados += 1
                         soma_valor += int(cod)
                         val_cell = cod
-                    elif cod in ['A', '?', 'F', 'FN', 'FS', 'LTS', 'CV', 'LG', 'PT', 'LA', 'NP', 'LT', 'LP', 'LSV', 'AD']:
+                    else:
+                        # Para aceitar o '?', 'A', 'LP', etc (que você tinha corrigido mais cedo)
                         val_cell = cod
                     
                     # Cálculo Bônus
@@ -1206,7 +1204,6 @@ def exportar_excel():
         workbook.close()
         output.seek(0)
         
-        # O nome do arquivo salvo agora indica se é Oficial, Praça ou Todos
         nome_arquivo = f"Frequencia_{cia}_{filtro_posto}_{mes}_{ano}.xlsx"
         return send_file(output, download_name=nome_arquivo, as_attachment=True)
 
