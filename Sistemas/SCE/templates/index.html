@@ -15,7 +15,6 @@
         .btn-custom:hover { background-color: #002244; color: white; }
         .status-badge { font-size: 0.8em; }
         .table-hover tbody tr:hover { background-color: #e9ecef; }
-        /* Estilo do botão de Protocolo */
         .btn-roxo { background-color: #6f42c1; color: white; border: none; }
         .btn-roxo:hover { background-color: #59359a; color: white; }
     </style>
@@ -85,16 +84,16 @@
                         <i class="fas fa-print"></i> Relatório Efetivo
                     </button>
                     
-                    <!-- 4. BOTÃO ESCALA SEMANAL (VISUAL) -->
+                    <!-- 4. BOTÃO ESCALA SEMANAL -->
                     <button class="btn btn-success btn-sm ms-1" data-bs-toggle="modal" data-bs-target="#modal-escala">
                         <i class="fas fa-calendar-alt"></i> Gerar Escala Semanal
                     </button>
 
-                    <!-- 5. BOTÃO EXPORTAR FREQUÊNCIA (Corrigido: Cor Azul e chamando o modal certo) -->
+                    <!-- 5. BOTÃO EXPORTAR FREQUÊNCIA -->
                     <button class="btn btn-info btn-sm text-white ms-1" data-bs-toggle="modal" data-bs-target="#modal-frequencia">
                         <i class="fas fa-file-invoice-dollar"></i> Exportar Frequência
                     </button>
-                </div> <!-- As DIVs que faltavam e quebravam o layout estão aqui! -->
+                </div> 
             </div>
             
             <div class="card-body p-0">
@@ -246,6 +245,8 @@
                                     <option value="2ª Cia">2ª Cia</option>
                                     <option value="3ª Cia">3ª Cia</option>
                                     <option value="4ª Cia">4ª Cia</option>
+                                    <option value="5ª Cia">5ª Cia</option>
+                                    <option value="6ª Cia">6ª Cia</option>
                                     <option value="Força Tática">Força Tática</option>
                                     <option value="EM">EM (Estado Maior)</option>
                                 </select>
@@ -258,15 +259,19 @@
                                     <option value="Subcomando">Subcomando</option>
                                     <option value="Coord Op">Coord Op</option>
                                     <option value="P1">P1</option>
-                                    <option value="P1/P5">P1/P5</option>
                                     <option value="P2">P2</option>
                                     <option value="P3">P3</option>
                                     <option value="P4">P4</option>
                                     <option value="P5">P5</option>
-                                    <option value="Tesouraria">Tesouraria</option>
-                                    <option value="SJD">SJD</option>
+                                    <option value="UGE">UGE</option>
+                                    <option value="UIS">UIS</option>
+                                    <option value="DivOP">DivOP</option>
+                                    <option value="Ordenança">Ordenança</option>
+                                    <option value="GT">GT</option>
+                                    <option value="Sub Frota">Sub Frota</option>
+                                    <option value="DivADM">DivAdm</option>
                                     <option value="SPJMD">SPJMD</option>
-                                    <option value="SAD">SAD</option>
+                                    <option value="Secretaria">Secretaria</option>
                                     <option value="Motomec">Motomec</option>
                                     <option value="CFP">CFP</option>
                                 </select>
@@ -338,7 +343,7 @@
         </div>
     </div>
 
-    <!-- MODAL GERAR ESCALA SEMANAL (Visual / Blocos) -->
+    <!-- MODAL GERAR ESCALA SEMANAL -->
     <div class="modal fade" id="modal-escala" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -359,6 +364,8 @@
                                 <option value="2ª Cia">2ª Cia</option>
                                 <option value="3ª Cia">3ª Cia</option>
                                 <option value="4ª Cia">4ª Cia</option>
+                                <option value="5ª Cia">5ª Cia</option>
+                                <option value="6ª Cia">6ª Cia</option>
                                 <option value="Força Tática">Força Tática</option>
                                 <option value="EM">EM (Estado Maior)</option>
                             </select>
@@ -375,14 +382,12 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
                         
-                        <!-- BOTÃO 1: Visualizar na Tela (Nova Aba) -->
                         <button type="submit" class="btn btn-primary" 
                                 formaction="{{ url_for('visualizar_escala_semanal') }}" 
                                 formtarget="_blank">
                             <i class="fas fa-eye"></i> Visualizar na Tela
                         </button>
                         
-                        <!-- BOTÃO 2: Gerar Planilha Excel -->
                         <button type="submit" class="btn btn-success" 
                                 formaction="{{ url_for('gerar_escala_semanal') }}" 
                                 formtarget="_self">
@@ -413,6 +418,8 @@
                                 <option value="2ª Cia">2ª Cia</option>
                                 <option value="3ª Cia">3ª Cia</option>
                                 <option value="4ª Cia">4ª Cia</option>
+                                <option value="5ª Cia">5ª Cia</option>
+                                <option value="6ª Cia">6ª Cia</option>
                                 <option value="Força Tática">Força Tática</option>
                             </select>
                         </div>
@@ -426,7 +433,7 @@
         </div>
     </div>
 
-    <!-- MODAL EXPORTAR FREQUÊNCIA (FINANCEIRO) -->
+    <!-- MODAL EXPORTAR FREQUÊNCIA -->
     <div class="modal fade" id="modal-frequencia" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -455,12 +462,13 @@
                                 <option value="2ª Cia">2ª Cia</option>
                                 <option value="3ª Cia">3ª Cia</option>
                                 <option value="4ª Cia">4ª Cia</option>
+                                <option value="5ª Cia">5ª Cia</option>
+                                <option value="6ª Cia">6ª Cia</option>
                                 <option value="Força Tática">Força Tática</option>
                                 <option value="EM">Estado Maior</option>
                             </select>
                         </div>
 
-                        <!-- NOVO FILTRO: CÍRCULO HIERÁRQUICO (OFICIAIS / PRAÇAS) -->
                         <div class="mb-3">
                             <label class="form-label fw-bold text-primary">Círculo Hierárquico</label>
                             <select name="filtro_posto" class="form-select" required>
