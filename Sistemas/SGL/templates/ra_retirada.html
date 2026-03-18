@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card shadow">
+  <div class="card-header bg-warning text-dark fw-bold">RA - Registrar Retirada</div>
+  <div class="card-body">
+    <form method="POST">
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label>Patrimônio ou Nº Série</label>
+          <input name="busca_material" class="form-control" required>
+          <small class="text-muted">Digite e salve. O sistema identifica o material.</small>
+        </div>
+        <div class="col-md-2">
+          <label>Posto/Grad</label>
+          <input name="posto_grad" class="form-control" required>
+        </div>
+        <div class="col-md-2">
+          <label>RE</label>
+          <input name="pm_re" class="form-control" required>
+        </div>
+        <div class="col-md-2">
+          <label>Nome de Guerra</label>
+          <input name="nome_guerra" class="form-control" required>
+        </div>
+        <div class="col-md-2">
+          <label>Cia/Seção</label>
+          <input name="cia_secao" class="form-control" required>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label>Observações (Retirada)</label>
+        <textarea name="observacoes" class="form-control" rows="2"></textarea>
+      </div>
+
+      <button class="btn btn-warning fw-bold">Registrar Saída RA</button>
+      <a class="btn btn-outline-secondary" href="{{ url_for('ra_consulta') }}">Ir para Consulta</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

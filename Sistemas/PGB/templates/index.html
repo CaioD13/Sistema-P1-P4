@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Protocolo de Documentos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f9; }
+        .card-header-proto { background-color: #4a148c; color: white; }
+        .badge-aberto { background-color: #28a745; }
+        .badge-saiu { background-color: #ffc107; color: black; }
+        .badge-arquivado { background-color: #6c757d; }
+    </style>
+</head>
+<body>
+    
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container-fluid">
+            <!-- Nome do Sistema e Seção -->
+            <span class="navbar-brand"><i class="fas fa-file-signature"></i> Protocolo Integrado - {{ current_user.secao }}</span>
+            
+            <div class="d-flex align-items-center">
+                <!-- Nome do Usuário Logado -->
+                <span class="text-white me-4">
+                    <i class="fas fa-user-circle"></i> Olá, {{ current_user.posto or '' }} {{ current_user.nome or current_user.username }}
+                </span>
+
+                <!-- BOTÃO ALTERAR SENHA -->
+                <button type="button" class="btn btn-outline-light btn-sm me-2" data-bs-toggle="modal" data-bs-target="#modalAlterarSenha">
+                    <i class="fas fa-key"></i> Alterar Senha
+                </button>
+
+                <!-- Botão Gerenciar Usuários (Apenas Admin) -->
+                {% if current_user.username == 'admin' %}
+                <a href="{{ url_for('gerenciar_usuarios') }}" class="btn btn-outline-info btn-sm me-2">
+                    <i class="fas fa-users-cog"></i> Usuários
+                </a>
+                {% endif %}
+                
+                <!-- Botão Sair -->
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-danger btn-sm">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="card shadow">
+            <div class="card-header card-header-proto d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Livro de Protocolo</h5>
+                <form method="GET" action="{{ url_for('index') }}" class="row g-2 align-items-center">
+                 <div class="col-auto">
+                    <label class="col-form-label fw-bold"><i class="fas fa-search"></i> Localizar Documento:</label>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" name="busca" class="form-control form-control-sm" 
+                           placeholder="Digite o Protocolo ou Nº de Origem..." 
+                           value="{{ busca }}">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary btn-sm">Pesquisar</button>
+                    {% if busca %}
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-sm">Limpar Filtro</a>
+                    {% endif %}
+                </div>
+            </form>
+        
+            <!-- FIM DA BARRA DE PESQUISA -->
+                <div>
+                    <!-- 1. BOTÃO RELATÓRIO -->
+                    <button class="btn btn-info btn-sm text-white me-3" data-bs-toggle="modal" data-bs-target="#modal-relatorio-protocolo">
+                        <i class="fas fa-print"></i> Relatório / Livro
+                    </button>
+
+                    <!-- 2. BOTÃO SAÍDA DIRETA -->
+                    <button class="btn btn-warning btn-sm me-2" data-bs-toggle="modal" data-bs-target="#modal-saida-direta">
+                        <i class="fas fa-paper-plane"></i> Nova Saída
+                    </button>
+                    
+                    <!-- 3. BOTÃO ENTRADA -->
+                    <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#modal-entrada">
+                        <i class="fas fa-plus-circle"></i> Nova Entrada
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle text-center table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Protocolo</th>
+                                <th>Data Reg.</th>
+                                <th>Documento</th>
+                                <th>Origem / Destino</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in docs %}
+                            <tr class="{{ 'table-secondary' if doc.status == 'Arquivado' else '' }}">
+                                <td class="fw-bold">{{ doc.numero_protocolo_formatado }}</td>
+                                <td>{{ doc.data_entrada.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td>
+                                    <strong>{{ doc.tipo_documento }}</strong><br>
+                                    <small>{{ doc.numero_documento_origem or 'S/N' }}</small>
+                                </td>
+                                <td class="text-start ps-4">
+                                    {% if doc.entregue_nome %}
+                                        <small class="text-success"><i class="fas fa-arrow-right"></i> <strong>Entrou por:</strong></small><br>
+                                        <small>{{ doc.entregue_posto }} {{ doc.entregue_nome }} ({{ doc.entregue_cia }})</small>
+                                    {% else %}
+                                        <small class="text-muted"><em>Produção Interna / Saída Direta</em></small>
+                                    {% endif %}
+                                    
+                                    {% if doc.status == 'Saiu' %}
+                                        <br>
+                                        <small class="text-danger"><i class="fas fa-arrow-left"></i> <strong>Saiu para:</strong></small><br>
+                                        <small>{{ doc.retirado_posto }} {{ doc.retirado_nome }} ({{ doc.retirado_cia }})</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if doc.status == 'Aberto' %}
+                                        <span class="badge badge-aberto">Na Seção</span>
+                                    {% elif doc.status == 'Saiu' %}
+                                        <span class="badge badge-saiu">Expedido / Saiu</span>
+                                    {% else %}
+                                        <span class="badge badge-arquivado">Arquivado</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-info text-white" data-bs-toggle="modal" data-bs-target="#modal-ver-{{ doc.id }}" title="Ver Detalhes">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    
+                                    {% if doc.status == 'Aberto' %}
+                                    <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#modal-tramite-saida" 
+                                            onclick="prepararSaida('{{ doc.id }}', '{{ doc.numero_protocolo_formatado }}')" title="Registrar Trâmite de Saída">
+                                        <i class="fas fa-sign-out-alt"></i>
+                                    </button>
+                                    
+                                    <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#modal-arquivo" 
+                                            onclick="prepararArquivo('{{ doc.id }}', '{{ doc.numero_protocolo_formatado }}')" title="Arquivar">
+                                        <i class="fas fa-archive"></i>
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+
+                            <!-- MODAL DETALHES -->
+                            <div class="modal fade" id="modal-ver-{{ doc.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-info text-white">
+                                            <h5 class="modal-title">Detalhes: {{ doc.numero_protocolo_formatado }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body text-start">
+                                            <div class="alert alert-light border">
+                                                <strong>Observações:</strong><br>
+                                                {{ doc.observacao or 'Sem observações.' }}
+                                            </div>
+                                            
+                                            {% if doc.entregue_nome %}
+                                            <h6 class="text-primary">Dados de Entrada</h6>
+                                            <p class="mb-1"><strong>Quem Trouxe:</strong> {{ doc.entregue_posto }} {{ doc.entregue_nome }} ({{ doc.entregue_cia }})</p>
+                                            <p><strong>Quem Recebeu:</strong> {{ doc.recebido_posto }} {{ doc.recebido_nome }}</p>
+                                            <hr>
+                                            {% endif %}
+
+                                            {% if doc.status == 'Saiu' %}
+                                            <h6 class="text-warning">Registro de Saída</h6>
+                                            <p class="mb-1"><strong>Destino / Retirado por:</strong> {{ doc.retirado_posto }} {{ doc.retirado_nome }} ({{ doc.retirado_cia }})</p>
+                                            <p class="mb-1"><strong>Despachado por:</strong> {{ doc.despachante_posto }} {{ doc.despachante_nome }}</p>
+                                            <p><strong>Data Saída:</strong> {{ doc.data_saida.strftime('%d/%m/%Y %H:%M') }}</p>
+                                            {% endif %}
+                                            
+                                            {% if doc.status == 'Arquivado' %}
+                                            <h6 class="text-secondary">Arquivo</h6>
+                                            <p><strong>Local:</strong> {{ doc.local_arquivo }}</p>
+                                            <p><strong>Data:</strong> {{ doc.data_arquivamento.strftime('%d/%m/%Y %H:%M') }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL RELATÓRIO -->
+    <div class="modal fade" id="modal-relatorio-protocolo" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="{{ url_for('gerar_relatorio_protocolo') }}" method="POST">
+                    <div class="modal-header bg-info text-white">
+                        <h5 class="modal-title"><i class="fas fa-print"></i> Gerar Relatório de Protocolo</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted">Selecione o período para gerar o livro de protocolo em Excel.</p>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Data Início</label>
+                                <input type="date" name="data_inicio" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Data Fim</label>
+                                <input type="date" name="data_fim" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-info text-white">Baixar Relatório</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL NOVA ENTRADA -->
+    <div class="modal fade" id="modal-entrada" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form action="{{ url_for('novo_protocolo') }}" method="POST">
+                    <div class="modal-header card-header-proto text-white">
+                        <h5 class="modal-title">Nova Entrada (Recebimento)</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Tipo</label>
+                                <select name="tipo" class="form-select" required>
+                                    <option value="Parte">Parte</option>
+                                    <option value="Memorando">Memorando</option>
+                                    <option value="Ofício">Ofício</option>
+                                    <option value="O.S.">O.S.</option>
+                                    <option value="Planilhas">Planilhas</option>
+                                    <option value="Outros">Outros</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Nº Origem</label>
+                                <input type="text" name="numero_origem" class="form-control" placeholder="Ex: 123/370/26">
+                            </div>
+
+                            <hr>
+                            <h6 class="text-primary">Quem Trouxe (Externo)</h6>
+                            <div class="col-md-3"><input type="text" name="ent_posto" class="form-control form-control-sm" placeholder="Posto" required></div>
+                            <div class="col-md-3"><input type="text" name="ent_re" class="form-control form-control-sm" placeholder="RE" required></div>
+                            <div class="col-md-3"><input type="text" name="ent_nome" class="form-control form-control-sm" placeholder="Nome" required></div>
+                            <div class="col-md-3"><input type="text" name="ent_cia" class="form-control form-control-sm" placeholder="Cia" required></div>
+
+                            <h6 class="text-success mt-2">Quem Recebeu (Sua Seção)</h6>
+                            <!-- PREENCHIMENTO AUTOMÁTICO AQUI -->
+                            <div class="col-md-3"><input type="text" name="rec_posto" class="form-control form-control-sm" placeholder="Posto" value="{{ current_user.posto or '' }}" required></div>
+                            <div class="col-md-3"><input type="text" name="rec_re" class="form-control form-control-sm" placeholder="RE" value="{{ current_user.re or '' }}" required></div>
+                            <div class="col-md-3"><input type="text" name="rec_nome" class="form-control form-control-sm" placeholder="Nome" value="{{ current_user.nome or '' }}" required></div>
+                            <div class="col-md-3"><input type="text" name="rec_cia" class="form-control form-control-sm" placeholder="Cia" value="{{ current_user.secao or '' }}" required></div>
+                            
+                            <div class="col-12 mt-2">
+                                <label>Observação</label>
+                                <textarea name="observacao" class="form-control" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary" style="background-color: #4a148c;">Protocolar Entrada</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL NOVA SAÍDA DIRETA -->
+    <div class="modal fade" id="modal-saida-direta" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form action="{{ url_for('nova_saida_direta') }}" method="POST">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title">Nova Saída (Expediente Próprio)</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-warning py-2">
+                            <small><i class="fas fa-info-circle"></i> Use para documentos criados na seção que serão enviados diretamente.</small>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Tipo</label>
+                                <select name="tipo" class="form-select" required>
+                                    <option value="Parte">Parte</option>
+                                    <option value="Memorando">Memorando</option>
+                                    <option value="Ofício">Ofício</option>
+                                    <option value="O.S.">O.S.</option>
+                                    <option value="Planilhas">Planilhas</option>
+                                    <option value="Outros">Outros</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Nº Documento</label>
+                                <input type="text" name="numero_origem" class="form-control" placeholder="Ex: 10/370/26">
+                            </div>
+
+                            <hr>
+                            <h6 class="text-danger">Quem Vai Levar/Retirar (Destino)</h6>
+                            <div class="col-md-3"><input type="text" name="ret_posto" class="form-control form-control-sm" placeholder="Posto" required></div>
+                            <div class="col-md-3"><input type="text" name="ret_re" class="form-control form-control-sm" placeholder="RE" required></div>
+                            <div class="col-md-3"><input type="text" name="ret_nome" class="form-control form-control-sm" placeholder="Nome" required></div>
+                            <div class="col-md-3"><input type="text" name="ret_cia" class="form-control form-control-sm" placeholder="Cia Destino" required></div>
+
+                            <h6 class="text-success mt-2">Quem Despachou (Sua Seção)</h6>
+                            <!-- PREENCHIMENTO AUTOMÁTICO AQUI -->
+                            <div class="col-md-4"><input type="text" name="desp_posto" class="form-control form-control-sm" placeholder="Posto" value="{{ current_user.posto or '' }}" required></div>
+                            <div class="col-md-4"><input type="text" name="desp_re" class="form-control form-control-sm" placeholder="RE" value="{{ current_user.re or '' }}" required></div>
+                            <div class="col-md-4"><input type="text" name="desp_nome" class="form-control form-control-sm" placeholder="Nome" value="{{ current_user.nome or '' }}" required></div>
+                            
+                            <div class="col-12 mt-2">
+                                <label>Observação</label>
+                                <textarea name="observacao" class="form-control" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-warning">Registrar Saída</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL TRÂMITE SAÍDA -->
+    <div class="modal fade" id="modal-tramite-saida" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form action="{{ url_for('registrar_saida') }}" method="POST">
+                    <div class="modal-header bg-dark text-white">
+                        <h5 class="modal-title">Trâmite de Saída: <span id="tramite_doc_num"></span></h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="doc_id" id="tramite_doc_id">
+                        
+                        <div class="row g-3">
+                            <h6 class="text-danger">Quem Retirou? (Destinatário)</h6>
+                            <div class="col-md-3"><input type="text" name="ret_posto" class="form-control form-control-sm" placeholder="Posto" required></div>
+                            <div class="col-md-3"><input type="text" name="ret_re" class="form-control form-control-sm" placeholder="RE" required></div>
+                            <div class="col-md-3"><input type="text" name="ret_nome" class="form-control form-control-sm" placeholder="Nome" required></div>
+                            <div class="col-md-3"><input type="text" name="ret_cia" class="form-control form-control-sm" placeholder="Cia Destino" required></div>
+
+                            <h6 class="text-success mt-2">Quem Entregou? (Operador)</h6>
+                            <!-- PREENCHIMENTO AUTOMÁTICO AQUI -->
+                            <div class="col-md-4"><input type="text" name="desp_posto" class="form-control form-control-sm" placeholder="Posto" value="{{ current_user.posto or '' }}" required></div>
+                            <div class="col-md-4"><input type="text" name="desp_re" class="form-control form-control-sm" placeholder="RE" value="{{ current_user.re or '' }}" required></div>
+                            <div class="col-md-4"><input type="text" name="desp_nome" class="form-control form-control-sm" placeholder="Nome" value="{{ current_user.nome or '' }}" required></div>
+                            
+                            <div class="col-12 mt-2">
+                                <label>Observação Adicional</label>
+                                <textarea name="obs_saida" class="form-control" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-dark">Confirmar Saída</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ARQUIVAR -->
+    <div class="modal fade" id="modal-arquivo" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="{{ url_for('arquivar_documento') }}" method="POST">
+                    <div class="modal-header bg-secondary text-white">
+                        <h5 class="modal-title">Arquivar: <span id="arq_doc_num"></span></h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="doc_id" id="arq_doc_id">
+                        <div class="mb-3">
+                            <label class="form-label">Local</label>
+                            <input type="text" name="local_arquivo" class="form-control" placeholder="Ex: Pasta 05" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Observação</label>
+                            <textarea name="obs_arquivo" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-secondary">Arquivar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ALTERAR SENHA -->
+    <div class="modal fade" id="modalAlterarSenha" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title"><i class="fas fa-key"></i> Alterar Minha Senha</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ url_for('alterar_senha') }}" method="POST">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Senha Atual</label>
+                            <input type="password" class="form-control" name="senha_atual" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nova Senha</label>
+                            <input type="password" class="form-control" name="nova_senha" required minlength="4">
+                            <small class="text-muted">Mínimo de 4 caracteres.</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Confirmar Nova Senha</label>
+                            <input type="password" class="form-control" name="confirmar_senha" required minlength="4">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Salvar Nova Senha</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function prepararSaida(id, numero) {
+            document.getElementById('tramite_doc_id').value = id;
+            document.getElementById('tramite_doc_num').textContent = numero;
+        }
+        function prepararArquivo(id, numero) {
+            document.getElementById('arq_doc_id').value = id;
+            document.getElementById('arq_doc_num').textContent = numero;
+        }
+    </script>
+</body>
+</html>

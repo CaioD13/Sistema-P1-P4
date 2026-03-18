@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2 class="text-primary"><i class="fas fa-search"></i> Consultar Histórico do PM</h2>
+        </div>
+    </div>
+
+    <!-- BARRA DE BUSCA -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body bg-light">
+            <form action="{{ url_for('consultar_pm') }}" method="POST" class="row g-3 align-items-center">
+                <div class="col-auto">
+                    <label class="col-form-label fw-bold">Digite o RE:</label>
+                </div>
+                <div class="col-auto">
+                    <input type="text" name="re_busca" class="form-control" placeholder="Ex: 123456" value="{{ pm.re if pm else '' }}" required>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Pesquisar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if pm %}
+    <!-- DADOS PRINCIPAIS -->
+    <div class="card shadow mb-4 border-primary">
+        <div class="card-header bg-primary text-white">
+            <h4 class="m-0"><i class="fas fa-user-shield"></i> {{ pm.posto }} {{ pm.nome }}</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3"><strong>RE:</strong> {{ pm.re }}</div>
+                <div class="col-md-3"><strong>Nome de Guerra:</strong> {{ pm.nome_guerra }}</div>
+                <div class="col-md-3"><strong>Cia Atual:</strong> {{ pm.cia }}</div>
+                <div class="col-md-3"><strong>Seção/Equipe:</strong> {{ pm.secao_em or pm.equipe or '-' }}</div>
+            </div>
+            <hr>
+            <div class="row mt-2">
+                <div class="col-md-3"><strong>Função:</strong> {{ pm.funcao }}</div>
+                <div class="col-md-3"><strong>Escala:</strong> {{ pm.tipo_escala }}</div>
+                <div class="col-md-6">
+                    <strong>Status Saúde:</strong> 
+                    <span class="badge {{ 'bg-success' if pm.status_saude == 'Apto Sem Restrições' else 'bg-warning text-dark' }}">
+                        {{ pm.status_saude }}
+                    </span>
+                    {% if pm.restricao_tipo %}
+                        <small class="text-danger">({{ pm.restricao_tipo }} até {{ pm.data_fim_restricao }})</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- COLUNA 1: Histórico de Movimentação -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="m-0"><i class="fas fa-exchange-alt"></i> Histórico de Movimentação</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover mb-0" style="font-size: 0.9rem;">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Tipo</th>
+                                    <th>De -> Para</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for h in historico_mov %}
+                                <tr>
+                                    <td>{{ h.data_mudanca.strftime('%d/%m/%Y') }}</td>
+                                    <td>{{ h.tipo_mudanca }}</td>
+                                    <td>
+                                        <span class="text-muted">{{ h.anterior }}</span> 
+                                        <i class="fas fa-arrow-right text-primary"></i> 
+                                        <strong>{{ h.novo }}</strong>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="3" class="text-center text-muted">Nenhuma movimentação registrada.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUNA 2: Histórico de Afastamentos -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="m-0"><i class="fas fa-hospital-user"></i> Histórico de Afastamentos</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover mb-0" style="font-size: 0.9rem;">
+                            <thead class="table-danger">
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Motivo (Sigla)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for a in historico_afast %}
+                                <tr>
+                                    <td>{{ a.data.strftime('%d/%m/%Y') }}</td>
+                                    <td>
+                                        <span class="badge bg-danger">{{ a.valor }}</span>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="2" class="text-center text-muted">Nenhum afastamento registrado.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
