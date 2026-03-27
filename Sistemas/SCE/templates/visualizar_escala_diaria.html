@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .page-title {
+        font-weight: 700;
+        letter-spacing: .5px;
+        color: #0d6efd;
+    }
+
+    .report-card {
+        border: 0;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58,59,69,.15);
+        border-radius: .5rem;
+    }
+
+    .report-header {
+        background: #fff;
+        border-bottom: 1px solid #e9ecef;
+        border-radius: .5rem .5rem 0 0;
+    }
+
+    .report-subtitle {
+        color: #6c757d;
+        font-size: .95rem;
+    }
+
+    .header-line {
+        font-weight: 600;
+        color: #212529;
+    }
+
+    .section-bar {
+        background: #595959;
+        color: #fff;
+        font-weight: 700;
+        font-size: .9rem;
+        padding: .55rem .75rem;
+        border-radius: .35rem;
+        margin: 1rem 0 .6rem 0;
+        letter-spacing: .4px;
+    }
+
+    .table thead th {
+        background: #efefef;
+        font-size: .78rem;
+        text-transform: uppercase;
+        text-align: center;
+        vertical-align: middle;
+        border: 1px solid #dcdcdc !important;
+    }
+
+    .table tbody td {
+        font-size: .82rem;
+        vertical-align: middle;
+        border: 1px solid #dcdcdc !important;
+    }
+
+    .col-center {
+        text-align: center;
+    }
+
+    .col-left {
+        text-align: left;
+    }
+
+    .badge-status-servico {
+        background: #d9ead3;
+        color: #1f6f43;
+        font-weight: 700;
+    }
+
+    .badge-status-folga {
+        background: #f3f3f3;
+        color: #6c757d;
+        font-weight: 700;
+    }
+
+    .summary-box {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: .35rem;
+        padding: .6rem .75rem;
+        font-size: .9rem;
+    }
+
+    .signature-line {
+        border-top: 1px solid #212529;
+        width: 260px;
+        margin: 2.5rem auto .4rem auto;
+    }
+
+    .signature-label {
+        text-align: center;
+        font-size: .82rem;
+        color: #212529;
+        font-weight: 600;
+    }
+
+    .legend-box {
+        display: inline-block;
+        padding: .3rem .65rem;
+        border-radius: 999px;
+        font-size: .78rem;
+        font-weight: 700;
+        margin-right: .4rem;
+    }
+
+    .legend-servico {
+        background: #d9ead3;
+        color: #1f6f43;
+    }
+
+    .legend-folga {
+        background: #f3f3f3;
+        color: #6c757d;
+    }
+
+    .small-muted {
+        color: #6c757d;
+        font-size: .82rem;
+    }
+
+    .footer-note {
+        font-size: .8rem;
+        color: #6c757d;
+    }
+
+    @media print {
+        .btn, .no-print {
+            display: none !important;
+        }
+
+        .report-card {
+            box-shadow: none !important;
+        }
+    }
+</style>
+
+<div class="container-fluid px-4 py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 no-print">
+        <div>
+            <h3 class="m-0 page-title">
+                <i class="fas fa-calendar-day me-2"></i>Visualização da Escala Diária
+            </h3>
+            <div class="report-subtitle">
+                {{ cia }} • {{ tipo_txt }} • {{ periodo_txt }}
+            </div>
+        </div>
+
+        <div>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <div class="card report-card">
+        <div class="card-body p-4">
+
+            <div class="report-header p-3 mb-3">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="header-line">SECRETARIA DA SEGURANÇA PÚBLICA</div>
+                        <div class="header-line">POLÍCIA MILITAR DO ESTADO DE SÃO PAULO</div>
+                        <div class="header-line">COMANDO DE POLICIAMENTO DE ÁREA METROPOLITANA DEZ</div>
+                        <div class="header-line">TRIGÉSIMO SÉTIMO BATALHÃO DE POLÍCIA MILITAR METROPOLITANO</div>
+                    </div>
+
+                    <div class="col-md-4 text-md-end text-start mt-3 mt-md-0">
+                        <div class="small-muted">Nº 37BPMM-{{ numerador }}</div>
+                        <div class="header-line">{{ versao_txt }}</div>
+                        <div class="small-muted">{{ periodo_txt }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <span class="legend-box legend-servico">SERVIÇO</span>
+                <span class="legend-box legend-folga">FOLGA</span>
+            </div>
+
+            <div class="summary-box mb-3">
+                <strong>Resumo:</strong>
+                <span class="ms-2">Serviço: {{ total_servico }}</span>
+                <span class="ms-3">Folga: {{ total_folga }}</span>
+            </div>
+
+{% for bloco in blocos %}
+    <div class="section-bar">
+        {{ bloco.nome_bloco | upper }}
+        {% if bloco.horario_turno %}
+            <span class="fw-normal ms-2">{{ bloco.horario_turno }}</span>
+        {% endif %}
+    </div>
+
+    <div class="table-responsive mb-4">
+        <table class="table table-sm align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>EQ</th>
+                    <th>POSTO</th>
+                    <th>RE</th>
+                    <th>NOME</th>
+                    <th>VTR</th>
+                    <th>HAB</th>
+                    <th>SAT</th>
+                    <th>FUNÇÃO</th>
+                    <th>SEÇÃO</th>
+                    <th>STATUS</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pm in bloco.pms %}
+                    {% set status = pm.status if pm.status is defined else '' %}
+                    <tr>
+                        <td class="col-center">{{ pm.equipe or '' }}</td>
+                        <td class="col-center">{{ pm.posto or '' }}</td>
+                        <td class="col-center">{{ pm.re or '' }}</td>
+                        <td class="col-left">{{ pm.nome or '' }}</td>
+                        <td class="col-center">{{ pm.viatura or '' }}</td>
+                        <td class="col-center">{{ pm.habilitacoes or '-' }}</td>
+                        <td class="col-center">{{ pm.sat or '-' }}</td>
+                        <td class="col-center">{{ pm.funcao or '' }}</td>
+                        <td class="col-center">{{ pm.secao_em or '' }}</td>
+                        <td class="col-center">
+                            {% if status == 'SERVIÇO' %}
+                                <span class="badge badge-status-servico">SERVIÇO</span>
+                            {% elif status == 'FOLGA' %}
+                                <span class="badge badge-status-folga">FOLGA</span>
+                            {% else %}
+                                <span class="badge badge-status-folga">{{ status or '' }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endfor %}
+
+            <div class="row mt-5 pt-3">
+                <div class="col-md-6 text-center">
+                    <div class="signature-line"></div>
+                    <div class="signature-label">ENCARREGADO DE ESCALA</div>
+                </div>
+                <div class="col-md-6 text-center">
+                    <div class="signature-line"></div>
+                    <div class="signature-label">CMT DA {{ cia }}</div>
+                </div>
+            </div>
+
+            <div class="text-center footer-note mt-4">
+                Emitido em {{ periodo_txt }} • Escala diária consolidada
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

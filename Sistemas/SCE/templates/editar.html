@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* Estilo Específico para o Calendário */
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 6px;
+        margin-top: 10px;
+    }
+    .calendar-header {
+        text-align: center;
+        font-weight: bold;
+        background-color: #343a40;
+        color: white;
+        padding: 8px 0;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        letter-spacing: 1px;
+    }
+    .calendar-day {
+        min-height: 95px;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        background-color: white;
+        padding: 6px;
+        position: relative;
+        transition: all 0.2s;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        cursor: pointer;
+    }
+    .calendar-day:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        z-index: 10;
+        border-color: #0d6efd;
+    }
+    .calendar-day.des-marcado {
+        background-color: #e7d7ff !important;
+        border-color: #8a63d2 !important;
+    }
+    .day-number {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #495057;
+    }
+    .day-value {
+        font-size: 0.8rem;
+        padding: 3px;
+        border-radius: 4px;
+        text-align: center;
+        width: 100%;
+        font-weight: 600;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    .day-meta {
+        font-size: 0.72rem;
+        line-height: 1.15;
+        text-align: center;
+        margin-top: 2px;
+    }
+    .empty-day {
+        background-color: transparent;
+        border: none;
+        cursor: default;
+    }
+    .empty-day:hover {
+        transform: none;
+        box-shadow: none;
+    }
+    .bg-white { background-color: #ffffff !important; }
+    .bg-light { background-color: #f8f9fa !important; }
+</style>
+
+<div class="container-fluid px-4">
+    <!-- CABEÇALHO SUPERIOR -->
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h3 class="m-0 text-dark fw-bold"><i class="fas fa-calendar-alt text-primary"></i> Editar Escala</h3>
+            <div class="mt-1 text-muted">
+                <span class="fs-5 text-dark">{{ pm.posto }} {{ pm.nome }}</span> 
+                <span class="badge bg-secondary ms-2">{{ pm.cia }}</span>
+                <span class="badge bg-info text-dark ms-1">RE: {{ pm.re }}</span>
+                <span class="badge bg-warning text-dark ms-1">Regime: <small class="text-muted">Regime bruto: "{{ pm.regime_escala }}"</small></span>
+            </div>
+            <!-- Exibição de Horário de Escala -->
+            <div class="mt-2">
+                {% if pm.hora_inicio_escala and pm.hora_fim_escala %}
+                    <span class="badge bg-primary me-1">
+                        Início: {{ pm.hora_inicio_escala.strftime('%H:%M') }}
+                    </span>
+                    <span class="badge bg-primary me-1">
+                        Fim: {{ pm.hora_fim_escala.strftime('%H:%M') }}
+                    </span>
+                    <span class="badge bg-success">
+                        Duração: {{ '%.2f'|format(pm.duracao_horas_escala or 0) }}h
+                    </span>
+                {% else %}
+                    <span class="badge bg-secondary">Sem horário cadastrado</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary shadow-sm"><i class="fas fa-arrow-left"></i> Voltar</a>
+        </div>
+    </div>
+
+    <!-- NAVEGAÇÃO DO MÊS -->
+    <div class="card shadow-sm mb-4 border-0">
+        <div class="card-body py-2 d-flex justify-content-between align-items-center bg-white rounded">
+            <a href="{{ url_for('escala', id_pm=pm.id, mes=nav.ant_m, ano=nav.ant_a) }}" class="btn btn-outline-primary">
+                <i class="fas fa-chevron-left"></i> Anterior
+            </a>
+            
+            <h4 class="m-0 fw-bold text-uppercase text-primary" style="letter-spacing: 1px;">{{ mes }}/{{ ano }}</h4>
+            
+            <a href="{{ url_for('escala', id_pm=pm.id, mes=nav.prox_m, ano=nav.prox_a) }}" class="btn btn-outline-primary">
+                Próximo <i class="fas fa-chevron-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- PAINEL DE VALIDAÇÃO (CHEFE P1) -->
+    <div class="card mb-3 shadow-sm {% if validacao %}border-success{% else %}border-secondary{% endif %}">
+        <div class="card-body d-flex justify-content-between align-items-center py-2">
+            <div>
+                {% if validacao %}
+                    <h6 class="text-success mb-0"><i class="fas fa-check-double"></i> Escala Validada Oficialmente</h6>
+                    <small class="text-muted">Por: <strong>{{ validacao.admin_info }}</strong> em {{ validacao.data_validacao.strftime('%d/%m/%Y às %H:%M') }}</small>
+                {% else %}
+                    <h6 class="text-secondary mb-0"><i class="fas fa-clock"></i> Escala Pendente de Validação</h6>
+                    <small class="text-muted">Aberto para edições da equipe.</small>
+                {% endif %}
+            </div>
+            
+            <div>
+                {% if current_user.perfil == 'admin' %}
+                    {% if validacao %}
+                        <form action="{{ url_for('revogar_validacao', id_pm=pm.id, mes=mes, ano=ano) }}" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="fas fa-unlock"></i> Revogar Validação
+                            </button>
+                        </form>
+                    {% else %}
+                        <form action="{{ url_for('validar_escala', id_pm=pm.id, mes=mes, ano=ano) }}" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-success btn-sm">
+                                <i class="fas fa-check"></i> Validar Escala do Mês
+                            </button>
+                        </form>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- CALENDÁRIO -->
+    <div class="card shadow border-0">
+        <div class="card-body p-3 bg-light">
+            <div class="calendar-grid mb-2">
+                <div class="calendar-header bg-danger">DOM</div>
+                <div class="calendar-header">SEG</div>
+                <div class="calendar-header">TER</div>
+                <div class="calendar-header">QUA</div>
+                <div class="calendar-header">QUI</div>
+                <div class="calendar-header">SEX</div>
+                <div class="calendar-header">SÁB</div>
+            </div>
+
+            <div class="calendar-grid">
+                {% for i in range(dias_vazios) %}
+                    <div class="calendar-day empty-day"></div>
+                {% endfor %}
+
+                {% for dia in escala %}
+                    <div class="calendar-day {{ dia.classe }} {% if dia.valor == 'DES' %}des-marcado{% endif %}"
+                        onclick="prepararModal('{{ dia.data_iso }}', '{{ dia.valor }}')">
+                        
+                        <div class="d-flex justify-content-between align-items-start">
+                            <span class="day-number">{{ dia.dia }}</span>
+                        </div>
+                        
+                        <div class="day-value border border-white border-opacity-25">
+                            {{ dia.valor }}
+                        </div>
+
+                        <div class="day-meta text-muted">
+                            <div><strong>{{ dia.descricao }}</strong></div>
+                            {% if dia.duracao_horas_escala is not none %}
+                                <div>{{ '%.2f'|format(dia.duracao_horas_escala) }}h</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card-footer bg-white text-muted small py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-info-circle text-primary"></i> Clique em um dia para alterar o status.</span>
+                <span class="badge bg-success fs-6">Dias Trabalhados: {{ totais.trabalhado }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DE EDIÇÃO -->
+<div class="modal fade" id="modalEdicao" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="{{ url_for('salvar_alteracao') }}" method="POST">
+                <input type="hidden" name="id_pm" value="{{ pm.id }}">
+                <input type="hidden" name="hora_inicio_ee" id="hora_inicio_ee">
+                <input type="hidden" name="hora_fim_ee" id="hora_fim_ee">
+                
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="fas fa-edit"></i> Alterar Escala</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="alert alert-primary border-0 text-center mb-3 py-2">
+                        Editando dia: <strong id="display_data" class="fs-5"></strong>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="small text-muted fw-bold">Data Início</label>
+                            <input type="date" name="data_inicio" id="data_inicio" class="form-control bg-light fw-bold text-primary" readonly>
+                        </div>
+                        <div class="col-6">
+                            <label class="small text-muted fw-bold">Data Fim (Para período)</label>
+                            <input type="date" name="data_fim" id="data_fim" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="fw-bold mb-1">Selecione o Novo Status:</label>
+                        <select name="valor" id="select_valor" class="form-select" size="14" required onchange="toggleTurnosEspeciais()">
+                            <option value="LIMPAR" class="text-danger fw-bold bg-light border-bottom">❌ LIMPAR (Restaurar Padrão)</option>
+                            
+                            <optgroup label="Novo modelo por horário">
+                                <option value="TRABALHO">TRABALHO</option>
+                                <option value="F">F - Folga</option>
+                                <option value="A">A - Afastamento</option>
+                                <option value="EE">EE - Escala Extra</option>
+                                <option value="FM">FM - Folga Mensal</option>
+                                <option value="F*">F* - Folga com Observações</option>
+                                <option value="DES">DES - Designação em Substituição</option>
+                            </optgroup>
+
+                            {% if pm.regime_escala == 'Administrativo' %}
+                            <optgroup label="Meios expedientes (Administrativo)">
+                                <option value="JM">JM - Junção de Meios</option>
+                                <option value="M1">M1 - Meio Expediente Manhã</option>
+                                <option value="M2">M2 - Meio Expediente Tarde</option>
+                            </optgroup>
+                            {% endif %}
+
+                            <optgroup label="Afastamentos / Licenças">
+                                <option value="DS">DS - Dispensa de Serviço</option>
+                                <option value="F*">F* - Folga com Observação</option>
+                                <option value="FN">FN - Férias Normais</option>
+                                <option value="FS">FS - Férias Sobrestadas</option>
+                                <option value="LTS">LTS - Licença Saúde</option>
+                                <option value="CV">CV - Convalescença</option>
+                                <option value="LG">LG - Licença Gestante</option>
+                                <option value="PT">PT - Licença Paternidade</option>
+                                <option value="LA">LA - Licença Adoção</option>
+                                <option value="NP">NP - Núpcias</option>
+                                <option value="LT">LT - Luto</option>
+                                <option value="EAP">EAP - Curso Presencial</option>
+                                <option value="LP">LP - Licença Prêmio</option>
+                                <option value="LSV">LSV - Licença Sem Vencimentos</option>
+                                <option value="AD">AD - Adido a outra OPM</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="submit" class="btn btn-primary px-4 fw-bold">Salvar Alteração</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL EE -->
+<div class="modal fade" id="modalEE" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title"><i class="fas fa-clock"></i> Escala Extra - EE</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="alert alert-warning border-0">
+                    Informe o horário da escala extra. O sistema usará a duração informada para calcular corretamente as diárias.
+                </div>
+
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label fw-bold">Horário Início</label>
+                        <input type="time" id="ee_inicio" class="form-control" required>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-bold">Horário Fim</label>
+                        <input type="time" id="ee_fim" class="form-control" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary px-4 fw-bold" onclick="confirmarEE()">Salvar EE</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let dataSelecionadaEE = null;
+
+    window.prepararModal = function(dataIso, valorAtual) {
+        document.getElementById('data_inicio').value = dataIso;
+        document.getElementById('data_fim').value = '';
+
+        const partes = dataIso.split('-');
+        document.getElementById('display_data').innerText = partes[2] + '/' + partes[1] + '/' + partes[0];
+
+        document.getElementById('select_valor').value = valorAtual;
+
+        const el = document.getElementById('modalEdicao');
+        const modal = bootstrap.Modal.getOrCreateInstance(el);
+        modal.show();
+    };
+
+    function toggleTurnosEspeciais() {
+        const valor = document.getElementById('select_valor').value;
+        const campoDataFim = document.getElementById('data_fim');
+
+        if (['TRABALHO', 'F', 'A', 'FM', 'F*', 'DES'].includes(valor)) {
+            campoDataFim.value = '';
+        }
+
+        if (valor === 'EE') {
+            const modalEdicao = bootstrap.Modal.getInstance(document.getElementById('modalEdicao'));
+            if (modalEdicao) modalEdicao.hide();
+
+            document.getElementById('ee_inicio').value = '';
+            document.getElementById('ee_fim').value = '';
+
+            const modalEE = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEE'));
+            modalEE.show();
+        }
+    }
+
+    function confirmarEE() {
+        const inicioEE = document.getElementById('ee_inicio').value;
+        const fimEE = document.getElementById('ee_fim').value;
+
+        if (!inicioEE || !fimEE) {
+            alert('Informe o horário de início e fim da Escala Extra.');
+            return;
+        }
+
+        document.getElementById('hora_inicio_ee').value = inicioEE;
+        document.getElementById('hora_fim_ee').value = fimEE;
+        document.getElementById('select_valor').value = 'EE';
+
+        const modalEE = bootstrap.Modal.getInstance(document.getElementById('modalEE'));
+        if (modalEE) modalEE.hide();
+
+        const modalForm = document.querySelector('#modalEdicao form');
+        modalForm.submit();
+    }
+</script>
+{% endblock %}

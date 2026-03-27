@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de Efetivo - SCE</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h2 { text-align: center; margin-bottom: 5px; text-transform: uppercase; }
+        p { text-align: center; margin-top: 0; color: #666; font-size: 14px; }
+        
+        /* Seção de Filtros */
+        .filtros-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #dee2e6;
+            overflow-x: auto; /* Scroll horizontal para muitos dropdowns */
+        }
+        .filtros-row { display: flex; flex-wrap: wrap; gap: 15px; align-items: end; }
+        .filtros-row label { font-weight: bold; min-width: 120px; margin-bottom: 5px; }
+        .filtros-row select { padding: 5px; min-width: 150px; }
+        .filtros-row button { padding: 8px 15px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .filtros-row button:hover { background: #0056b3; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #000; padding: 6px 8px; text-align: left; font-size: 11px; vertical-align: middle; }
+        th { background-color: #f0f0f0; font-weight: bold; text-align: center; }
+        td { text-align: center; } /* Centraliza tudo por padrão */
+        
+        /* Ajustes específicos de alinhamento */
+        .txt-left { text-align: left !important; }
+        
+        .danger { color: red; font-weight: bold; }
+        .warning { color: #d63384; font-weight: bold; }
+
+        @media print {
+            .no-print, .filtros-section { display: none; }
+            @page { margin: 1cm; size: landscape; } /* Sugere paisagem para muitas colunas */
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="margin-bottom: 20px; text-align: center; padding: 10px; background: #f8f9fa; border-bottom: 1px solid #ddd;">
+        <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; font-weight: bold;">
+            🖨️ Imprimir Lista
+        </button>
+        <button onclick="window.close()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; cursor: pointer; border-radius: 4px; margin-left: 10px;">
+            Fechar Janela
+        </button>
+    </div>
+
+    <!-- Seção de Filtros (no-print para impressão) -->
+    <div class="filtros-section no-print">
+        <form method="POST" action="{{ url_for('gerar_relatorio_efetivo') }}">
+            <input type="hidden" name="cia_relatorio" value="{{ cia }}">
+            
+            <div class="filtros-row">
+                <div>
+                    <label for="filtro_posto">Posto/Grad:</label>
+                    <select name="filtro_posto" id="filtro_posto">
+                        <option value="">Todos</option>
+                        {% for posto in opcoes_posto %}
+                            <option value="{{ posto }}" {% if filtro_posto == posto %}selected{% endif %}>{{ posto }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="filtro_re">RE:</label>
+                    <select name="filtro_re" id="filtro_re">
+                        <option value="">Todos</option>
+                        {% for re in opcoes_re %}
+                            <option value="{{ re }}" {% if filtro_re == re %}selected{% endif %}>{{ re }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="filtro_nome_guerra">Nome de Guerra:</label>
+                    <select name="filtro_nome_guerra" id="filtro_nome_guerra">
+                        <option value="">Todos</option>
+                        {% for nome in opcoes_nome_guerra %}
+                            <option value="{{ nome }}" {% if filtro_nome_guerra == nome %}selected{% endif %}>{{ nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="filtro_cia">Cia/Seção:</label>
+                    <select name="filtro_cia" id="filtro_cia">
+                        <option value="">Todos</option>
+                        {% for cia_val in opcoes_cia %}
+                            <option value="{{ cia_val }}" {% if filtro_cia == cia_val %}selected{% endif %}>{{ cia_val }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="filtro_funcao">Função:</label>
+                    <select name="filtro_funcao" id="filtro_funcao">
+                        <option value="">Todos</option>
+                        {% for funcao in opcoes_funcao %}
+                            <option value="{{ funcao }}" {% if filtro_funcao == funcao %}selected{% endif %}>{{ funcao }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="filtro_situacao">Situação:</label>
+                    <select name="filtro_situacao" id="filtro_situacao">
+                        <option value="">Todos</option>
+                        {% for situacao in opcoes_situacao %}
+                            <option value="{{ situacao }}" {% if filtro_situacao == situacao %}selected{% endif %}>{{ situacao }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="filtro_afastamento">Afastamento:</label>
+                    <select name="filtro_afastamento" id="filtro_afastamento">
+                        <option value="">Todos</option>
+                        {% for afastamento in opcoes_afastamento %}
+                            <option value="{{ afastamento }}" {% if filtro_afastamento == afastamento %}selected{% endif %}>{{ afastamento }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="filtro_habilitacoes">Habilitações:</label>
+                    <select name="filtro_habilitacoes" id="filtro_habilitacoes">
+                        <option value="">Todos</option>
+                        {% for hab in opcoes_habilitacoes %}
+                            <option value="{{ hab }}" {% if filtro_habilitacoes == hab %}selected{% endif %}>{{ hab }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="filtro_sat">SAT:</label>
+                    <select name="filtro_sat" id="filtro_sat">
+                        <option value="">Todos</option>
+                        {% for sat in opcoes_sat %}
+                            <option value="{{ sat }}" {% if filtro_sat == sat %}selected{% endif %}>{{ sat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <button type="submit">Aplicar Filtros</button>
+            </div>
+        </form>
+        
+        {% if filtro_posto or filtro_re or filtro_nome_guerra or filtro_cia or filtro_funcao or filtro_situacao or filtro_afastamento or filtro_habilitacoes or filtro_sat %}
+            <p style="margin-top: 10px; font-style: italic; color: #666;">
+                Filtros aplicados: Posto "{{ filtro_posto }}", RE "{{ filtro_re }}", Nome "{{ filtro_nome_guerra }}", Cia "{{ filtro_cia }}", Função "{{ filtro_funcao }}", Situação "{{ filtro_situacao }}", Afastamento "{{ filtro_afastamento }}", Habilitações "{{ filtro_habilitacoes }}", SAT "{{ filtro_sat }}". 
+                <a href="{{ url_for('gerar_relatorio_efetivo', cia_relatorio=cia) }}" style="color: #007bff;">Limpar filtros</a>
+            </p>
+        {% endif %}
+    </div>
+
+    <h2>RELATÓRIO DE EFETIVO - {{ cia }}</h2>
+    
+    <table>
+        <thead>
+            <tr>
+                <th width="8%">Posto/Grad</th>
+                <th width="6%">RE</th>
+                <th width="20%">Nome de Guerra</th>
+                <th width="12%">Cia/Seção</th>
+                <th width="15%">Função</th>
+                <th width="12%">Situação</th>
+                <th width="12%">Afastamento</th>
+                <th width="10%">Habilitações</th>
+                <th width="5%">SAT</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pm in pms %}
+            <tr>
+                <td>{{ pm.posto }}</td>
+                <td>{{ pm.re }}</td>
+                <td class="txt-left">{{ pm.nome_guerra or pm.nome or '-' }}</td>
+                <td>{{ pm.cia }}</td>
+                <td>{{ pm.funcao if pm.funcao else '-' }}</td>
+                <td class="{{ 'danger' if pm.status_saude != 'Apto Sem Restrições' else '' }}">
+                    {{ pm.status_saude }}
+                </td>
+                <td>{{ pm.restricao_tipo if pm.restricao_tipo else '-' }}</td>
+                <td class="txt-left">{{ pm.hab_texto or '-' }}</td>
+                <td>{{ pm.sat_texto or '-' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="9" style="text-align:center; padding: 20px;">Nenhum policial encontrado com os filtros aplicados.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div style="margin-top: 20px; font-size: 10px; text-align: right; color: #888;">
+        Gerado em: <script>document.write(new Date().toLocaleDateString() + ' às ' + new Date().toLocaleTimeString())</script>
+        | Total de PMs: {{ pms|length }}
+    </div>
+</body>
+</html>
