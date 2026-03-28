@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 no-print">
+  <h3 class="mb-0">Efetivo Cadastrado</h3>
+  <div class="d-flex gap-2">
+    <a class="btn btn-success" href="{{ url_for('escala.visualizar_escala') }}">Visualizar Escala</a>
+    <a class="btn btn-secondary" href="{{ url_for('frequencia.exportar_excel') }}">Exportar Frequência</a>
+  </div>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-striped table-hover align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>RE</th>
+        <th>Posto/Grad</th>
+        <th>Nome</th>
+        <th>Tipo Escala</th>
+        <th>Status</th>
+        <th class="no-print">Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pm in pms %}
+      <tr>
+        <td>{{ pm.re }}</td>
+        <td>{{ pm.posto }}</td>
+        <td>{{ pm.nome_guerra or pm.nome }}</td>
+        <td>{{ pm.tipo_escala }}</td>
+        <td>{{ pm.status_saude }}</td>
+        <td class="no-print">
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('escala.visualizar_escala') }}?cia={{ pm.cia }}">Escala</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

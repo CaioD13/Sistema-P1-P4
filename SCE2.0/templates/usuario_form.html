@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-header bg-primary text-white">
+        <strong>{% if usuario %}Editar Usuário{% else %}Novo Usuário{% endif %}</strong>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">Username</label>
+              <input type="text" name="username" class="form-control" value="{{ usuario.username if usuario else '' }}" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">RE</label>
+              <input type="text" name="re" class="form-control" value="{{ usuario.re if usuario else '' }}" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Perfil</label>
+              <select name="perfil" class="form-select">
+                <option value="comum" {% if usuario and usuario.perfil == 'comum' %}selected{% endif %}>Comum</option>
+                <option value="operador" {% if usuario and usuario.perfil == 'operador' %}selected{% endif %}>Operador</option>
+                <option value="admin" {% if usuario and usuario.perfil == 'admin' %}selected{% endif %}>Admin</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Nome</label>
+              <input type="text" name="nome" class="form-control" value="{{ usuario.nome if usuario else '' }}" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Senha {% if usuario %}(deixe em branco para manter){% endif %}</label>
+              <input type="password" name="password" class="form-control" {% if not usuario %}required{% endif %}>
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 justify-content-end mt-4 no-print">
+            <a href="{{ url_for('usuarios.listar') }}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Salvar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

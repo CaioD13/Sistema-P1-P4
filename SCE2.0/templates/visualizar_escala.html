@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 no-print">
+  <div>
+    <h3 class="mb-0">Visualizar Escala</h3>
+    <small class="text-muted">Selecione a companhia, o tipo de filtro e a data de início</small>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-4 no-print">
+  <div class="card-body">
+    <form method="get" action="{{ url_for('escala.visualizar_escala') }}" class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label">Cia/EM</label>
+        <select name="cia" class="form-select">
+          <option value="EM" {% if cia == 'EM' %}selected{% endif %}>EM</option>
+          <option value="1ª Cia" {% if cia == '1ª Cia' %}selected{% endif %}>1ª Cia</option>
+          <option value="2ª Cia" {% if cia == '2ª Cia' %}selected{% endif %}>2ª Cia</option>
+          <option value="3ª Cia" {% if cia == '3ª Cia' %}selected{% endif %}>3ª Cia</option>
+          <option value="4ª Cia" {% if cia == '4ª Cia' %}selected{% endif %}>4ª Cia</option>
+          <option value="Cia FT" {% if cia == 'Cia FT' %}selected{% endif %}>Cia FT</option>
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label">Tipo de Filtro</label>
+        <select name="tipo_filtro" class="form-select">
+          <option value="TODOS" {% if tipo_filtro == 'TODOS' %}selected{% endif %}>Todos</option>
+          <option value="OFICIAIS" {% if tipo_filtro == 'OFICIAIS' %}selected{% endif %}>Oficiais</option>
+          <option value="PRACAS" {% if tipo_filtro == 'PRACAS' %}selected{% endif %}>Praças</option>
+          <option value="CFP" {% if tipo_filtro == 'CFP' %}selected{% endif %}>CFP</option>
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label">Data inicial</label>
+        <input type="date" name="data_inicio" class="form-control" value="{{ data_inicio.strftime('%Y-%m-%d') if data_inicio else '' }}">
+      </div>
+
+      <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Visualizar</button>
+        <a class="btn btn-outline-secondary"
+           href="{{ url_for('escala.imprimir_escala', cia=cia, tipo_filtro=tipo_filtro, data_inicio=data_inicio.strftime('%Y-%m-%d') if data_inicio else '') }}">
+          Imprimir Escala
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if blocos %}
+  <div class="mb-3">
+    <div><strong>{{ tipo_txt }}</strong> - {{ numerador }} - {{ versao_txt }}</div>
+    <div class="text-muted">{{ periodo_txt }}</div>
+  </div>
+
+  {% for bloco in blocos %}
+  <div class="card mb-3 bloco-escala">
+    <div class="card-header bg-secondary text-white">
+      <div class="d-flex justify-content-between align-items-center">
+        <span>{{ bloco.nome_bloco }}</span>
+        <small>{{ bloco.horario_turno }}</small>
+      </div>
+    </div>
+
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-bordered mb-0 align-middle text-center">
+          <thead class="table-light">
+            <tr>
+              <th>Posto</th>
+              <th>RE</th>
+              <th>Nome</th>
+              <th>Função</th>
+              {% for dia in dias_semana %}
+                <th>{{ dia.dia_semana }}<br>{{ dia.data_str }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for pm in bloco.pms %}
+            <tr>
+              <td>{{ pm.posto }}</td>
+              <td>{{ pm.re }}</td>
+              <td class="text-start">{{ pm.nome_guerra or pm.nome }}</td>
+              <td class="text-start">{{ pm.funcao }}</td>
+              {% for dia in pm.dias %}
+                <td class="{% if dia.is_afastamento %}table-warning{% endif %}">{{ dia.valor }}</td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="alert alert-info">Nenhum dado encontrado para os filtros selecionados.</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function imprimirEscala() {
+    window.print();
+  }
+</script>
+{% endblock %}

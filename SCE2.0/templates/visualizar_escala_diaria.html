@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 no-print">
+  <div>
+    <h3 class="mb-0">Escala Diária</h3>
+    <div class="text-muted">{{ data.strftime('%d/%m/%Y') }}</div>
+  </div>
+  <a class="btn btn-outline-primary" href="{{ url_for('escala.visualizar_escala') }}">Voltar</a>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-bordered table-striped align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>Posto</th>
+        <th>RE</th>
+        <th>Nome</th>
+        <th>Bloco</th>
+        <th>Status</th>
+        <th>Descrição</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in resultados %}
+      <tr>
+        <td>{{ item.pm.posto }}</td>
+        <td>{{ item.pm.re }}</td>
+        <td>{{ item.pm.nome_guerra or item.pm.nome }}</td>
+        <td>{{ item.pm.secao_em }}</td>
+        <td>{{ item.info.sigla }}</td>
+        <td>{{ item.info.descricao }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

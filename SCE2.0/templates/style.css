@@ -1,0 +1,21 @@
+body {
+  background: #f8f9fa;
+}
+
+.no-print {
+  display: block;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  .card {
+    border: 1px solid #000 !important;
+  }
+}

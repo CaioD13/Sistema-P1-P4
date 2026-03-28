@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 no-print">
+  <h3 class="mb-0">Usuários</h3>
+  <a href="{{ url_for('usuarios.novo') }}" class="btn btn-primary">Novo Usuário</a>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-striped table-hover align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>ID</th>
+        <th>Username</th>
+        <th>RE</th>
+        <th>Nome</th>
+        <th>Perfil</th>
+        <th class="no-print">Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for usuario in usuarios %}
+      <tr>
+        <td>{{ usuario.id }}</td>
+        <td>{{ usuario.username }}</td>
+        <td>{{ usuario.re }}</td>
+        <td>{{ usuario.nome }}</td>
+        <td>{{ usuario.perfil }}</td>
+        <td class="no-print">
+          <a href="{{ url_for('usuarios.editar', id=usuario.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
+          <form method="post" action="{{ url_for('usuarios.excluir', id=usuario.id) }}" class="d-inline" onsubmit="return confirm('Confirma a exclusão deste usuário?')">
+            <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

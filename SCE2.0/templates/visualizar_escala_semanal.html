@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<style>
+  @media print {
+    .no-print { display: none !important; }
+    body {
+      background: #fff !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .bloco-escala {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    @page {
+      size: A4 landscape;
+      margin: 1cm;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 no-print">
+  <div>
+    <h3 class="mb-0">Escala Semanal</h3>
+    <div class="text-muted">{{ periodo_txt }}</div>
+  </div>
+  <div class="d-flex gap-2">
+    <button type="button" class="btn btn-primary" onclick="window.print()">Imprimir Escala</button>
+    <a class="btn btn-outline-primary" href="{{ url_for('escala.visualizar_escala') }}">Voltar</a>
+  </div>
+</div>
+
+<div class="mb-3">
+  <div><strong>{{ tipo_txt }}</strong> - {{ numerador }} - {{ versao_txt }}</div>
+</div>
+
+{% for bloco in blocos %}
+<div class="card mb-3 bloco-escala">
+  <div class="card-header bg-secondary text-white">
+    <div class="d-flex justify-content-between align-items-center">
+      <span>{{ bloco.nome_bloco }}</span>
+      <small>{{ bloco.horario_turno }}</small>
+    </div>
+  </div>
+
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-bordered mb-0 align-middle text-center">
+        <thead class="table-light">
+          <tr>
+            <th>Posto</th>
+            <th>RE</th>
+            <th>Nome</th>
+            <th>Função</th>
+            {% for dia in dias_semana %}
+              <th>{{ dia.dia_semana }}<br>{{ dia.data_str }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for pm in bloco.pms %}
+          <tr>
+            <td>{{ pm.posto }}</td>
+            <td>{{ pm.re }}</td>
+            <td class="text-start">{{ pm.nome_guerra or pm.nome }}</td>
+            <td class="text-start">{{ pm.funcao }}</td>
+            {% for dia in pm.dias %}
+              <td class="{% if dia.is_afastamento %}table-warning{% endif %}">{{ dia.valor }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}
